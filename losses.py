@@ -5,6 +5,10 @@ import numpy as np
 import utils as mutils
 import models
 import sde_lib
+import configs
+
+
+
 
 def get_sde_loss_fn(sde,train,reduce_mean=True,continuous=True,likelihood_weighting=True,eps=1e-5):
     reduce_op = torch.mean if reduce_mean else lambda *args,**kwargs: 0.5 * torch.sum(*args,**kwargs)
@@ -41,7 +45,7 @@ def get_recon_loss_fn(train,reduce_mean = True):
             decoder_fn = mutils.get_model_fn(decoder,train=train)
 
             output = encoder_fn(batch)
-            z = torch.randn((output.shape))
+            z = torch.randn((output.shape),device=batch.device)
             recon_output  = decoder_fn(z)
 
             losses = torch.square(batch - recon_output)
@@ -62,10 +66,12 @@ def get_ed_step_fn(train,reduce_mean=True):
         decoder_optim.zero_grad()
 
         loss = loss_fn(encoder,decoder,batch)
-        loss.backward()
 
-        encoder_optim.step()
-        decoder_optim.step()
+        if train:
+            loss.backward()
+            encoder_optim.step()
+            decoder_optim.step()
+
         return loss
         
     return step_fn
@@ -77,7 +83,7 @@ def get_sde_step_fn(sde,train,optimize_fn=None,reduce_mean=True,continuous=True,
 
     def step_fn(state,batch):
         encoder = state['encoder']
-        encoder_fn = mutils.get_model_fn(encoder,train=False)
+        encoder_fn = mutils.get_model_fn(encoder,train=train)
         batch = encoder_fn(batch)
 
         denoiser = state['denoiser']
@@ -85,35 +91,11 @@ def get_sde_step_fn(sde,train,optimize_fn=None,reduce_mean=True,continuous=True,
 
         denoiser_optim.zero_grad()
         loss = loss_fn(denoiser,batch.permute(0,2,1))
-        loss.backward()
-        denoiser_optim.step()
+        if train:
+            loss.backward()
+            denoiser_optim.step()
 
         return loss
 
     return step_fn
-    
 
-
-if __name__ == '__main__':
-    encoder = models.Encoder(9,10,4)
-    decoder = models.Decoder(10,10,4,9)
-    denoiser = models.Denoiser(320,10)
-
-    encoder_optim = torch.optim.Adam(encoder.parameters(),lr=0.001)
-    decoder_optim = torch.optim.Adam(decoder.parameters(),lr=0.001)
-    denoiser_optim= torch.optim.Adam(decoder.parameters(),lr=0.001)
-
-    state = dict(encoder=encoder,decoder=decoder,denoiser=denoiser,encoder_optim=encoder_optim,decoder_optim=decoder_optim,denoiser_optim=denoiser_optim)
-    
-    sde = sde_lib.VPSDE(beta_min=0.1,beta_max=20)
-
-
-    ed_step = get_ed_step_fn(train=False,reduce_mean=True)
-    sde_step = get_sde_step_fn(sde,train=False)
-
-    batch = torch.randn((2,320,9))
-    recon_loss = ed_step(state,batch)
-    sde_loss = sde_step(state,batch)
-
-    print(recon_loss)
-    print(sde_loss)

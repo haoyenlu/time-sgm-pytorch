@@ -8,22 +8,46 @@ def get_default_configs():
   # training
   config.training = training = ml_collections.ConfigDict()
   config.training.batch_size = 8
-  training.n_iters = 1300001
+  training.ed_iters = 50000
+  training.main_iters = 40000
   training.likelihood_weighting = False
   training.continuous = True
   training.reduce_mean = True
   training.sde = 'subvpsde'
+  training.log_freq = 100
+  training.checkpoint_freq = 1000
+
+
+  # sampling
+  config.sampling = sampling = ml_collections.ConfigDict()
+  sampling.n_steps_each = 1
+  sampling.noise_removal = True
+  sampling.probability_flow = False
+  sampling.snr = 0.16
+  sampling.method = 'pc'
+  sampling.predictor = 'euler_maruyama'
+  sampling.corrector = 'none'
+  sampling.num_sample = 200
 
 
 
   # data
   config.data = data = ml_collections.ConfigDict()
+  data.batch_size = 8
   data.seq_len = 320
   data.num_features = 9
 
   # model
   config.model = model = ml_collections.ConfigDict()
-  config.model.encoder = ml_collections.ConfigDict()
+  # Encoder
+  model.encoder_hidden_dim = 1
+  model.encoder_num_layer = 4
+  # Decoder
+  model.decoder_hidden_dim = 1
+  model.decoder_num_layer = 4
+  # Denoiser
+  model.denoiser_hidden_dim = [16,32,64,128]
+  # Score
   model.sigma_max = 90
   model.sigma_min = 0.01
   model.num_scales = 1000

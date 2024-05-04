@@ -7,14 +7,14 @@ from torchsummary import summary
 import utils as mutils
 
 class Encoder(nn.Module):
-    def __init__(self,input_dim,hidden_dim,num_layer): # input_size : num_feature
+    def __init__(self,config): # input_size : num_feature
         super(Encoder,self).__init__()
-        self.hidden_dim = hidden_dim
-        self.num_layer = num_layer
+        self.hidden_dim = config.model.encoder_hidden_dim
+        self.num_layer = config.model.encoder_num_layer
         self.lstm = nn.LSTM(
-            input_dim,
-            hidden_dim,
-            num_layer,
+            config.data.num_features,
+            config.model.encoder_hidden_dim,
+            config.model.encoder_num_layer,
             batch_first=True,
             bidirectional=False,
         )
@@ -25,17 +25,17 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self,input_dim,hidden_dim,num_layer,output_dim):
+    def __init__(self,config):
         super(Decoder,self).__init__()
         self.lstm = nn.LSTM(
-            input_dim,
-            hidden_dim,
-            num_layer,
+            config.model.encoder_hidden_dim,
+            config.model.decoder_hidden_dim,
+            config.model.decoder_num_layer,
             batch_first=True,
             bidirectional=False
         )
 
-        self.fc = nn.Linear(hidden_dim,output_dim)
+        self.fc = nn.Linear(config.model.decoder_hidden_dim,config.data.num_features)
     
     def forward(self,x):
         output, (hidden,cell) = self.lstm(x)
@@ -61,41 +61,41 @@ class ConvBlock(nn.Module):
 
 
 class Denoiser(nn.Module):
-    def __init__(self,seq_len,input_dim,hidden_dim = [16,32,64,128]):
+    def __init__(self,config):
         super(Denoiser,self).__init__()
         
-        assert seq_len % 2 ** len(hidden_dim) == 0
+        assert config.data.seq_len % 2 ** len(config.model.denoiser_hidden_dim) == 0
 
-        self.hidden_dim = hidden_dim
-        self.input_dim = input_dim
+        self.hidden_dim = config.model.denoiser_hidden_dim
+        self.input_dim = config.model.encoder_hidden_dim
 
         all_modules = []
         self.down = nn.AvgPool1d(kernel_size=5,padding=5//2,stride=2)
         self.up = nn.Upsample(scale_factor=2)
 
         # Downsampling block
-        prev_ch = input_dim
-        for dim in hidden_dim[:-1]:
+        prev_ch = self.input_dim
+        for dim in self.hidden_dim[:-1]:
             all_modules.append(self._make_conv_block(prev_ch,dim,kernel=5,stride=1,padding="same"))
             prev_ch = dim
         
         # Middle block
-        all_modules.append(self._make_conv_block(prev_ch,hidden_dim[-1],kernel=5,stride=1,padding="same"))
+        all_modules.append(self._make_conv_block(prev_ch,self.hidden_dim[-1],kernel=5,stride=1,padding="same"))
         
         # Upsampling block
-        prev_ch = hidden_dim[-1]
-        for dim in reversed(hidden_dim[:-1]):
+        prev_ch = self.hidden_dim[-1]
+        for dim in reversed(self.hidden_dim[:-1]):
             all_modules.append(ConvBlock(prev_ch,dim,kernel=5,stride=1,padding="same"))
             all_modules.append(self._make_conv_block(2*dim,dim,kernel=5,stride=1,padding="same"))
             prev_ch = dim
         
-        all_modules.append(nn.Conv1d(prev_ch,input_dim,kernel_size=5,stride=1,padding="same"))
+        all_modules.append(nn.Conv1d(prev_ch,self.input_dim,kernel_size=5,stride=1,padding="same"))
 
         self.act = nn.ReLU() # Test with Relu and Tanh
         self.all_modules = nn.ModuleList(all_modules)
 
         self.temp_fc = nn.Sequential(
-            nn.Linear(input_dim,input_dim),
+            nn.Linear(self.input_dim,self.input_dim),
             nn.ReLU()
         )
 
