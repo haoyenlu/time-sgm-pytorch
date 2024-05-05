@@ -3,7 +3,7 @@ import torch
 import logging
 
 def restore_checkpoint(ckpt_dir, state, device):
-  if not os.path.exists(ckpt_dir):
+  if ckpt_dir == None or not os.path.exists(ckpt_dir):
     logging.info(f"No checkpoint found at {ckpt_dir}. "
                     f"Returned the same state as input")
     return state
