@@ -8,6 +8,7 @@ def restore_checkpoint(ckpt_dir, state, device):
                     f"Returned the same state as input")
     return state
   else:
+    print(f"Load checkpoint from {ckpt_dir}. ")
     loaded_state = torch.load(ckpt_dir, map_location=device)
     state['encoder'].load_state_dict(loaded_state['encoder'])
     state['decoder'].load_state_dict(loaded_state['decoder'])

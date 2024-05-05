@@ -85,7 +85,7 @@ def train(args,config):
 
         if step % config.training.log_freq == 0:
             print(f"Step: {step}, Loss: {sde_loss.item()}")
-            writer.add_scaler("Diffusion Training Loss",sde_loss.item(),step)
+            writer.add_scalar("Diffusion Training Loss",sde_loss.item(),step)
 
         if step != 0 and step % config.training.checkpoint_freq == 0:
             checkpoint.save_checkpoint(os.path.join(args.ckptDir,f'checkpoint_{step}'),state)
