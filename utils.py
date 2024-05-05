@@ -72,8 +72,7 @@ def from_flattened_numpy(x, shape):
 def get_dataset(dir,config):
     numpy_data = np.load(dir,allow_pickle=True).item()
     train_data = numpy_data['data']
-    print(train_data.shape)
     dataloader = torch.utils.data.DataLoader(train_data,config.data.batch_size,shuffle=True)
     _size, feat , seq_len = train_data.shape
     assert seq_len == config.data.seq_len and config.data.num_features == feat
-    return train_data
+    return dataloader
