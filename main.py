@@ -59,7 +59,7 @@ def train(args,config):
     logging.info("Start Training encoder-decoder")
     # encoder-decoder training loop
     for step in range(config.training.ed_iters):
-        batch = torch.from_numpy(next(train_iter)).to(config.device).float().permute(0,2,1)
+        batch = next(train_iter).to(config.device).float().permute(0,2,1)
         recon_loss = ed_step(state,batch)
 
         if step % config.training.log_freq == 0:
@@ -73,7 +73,7 @@ def train(args,config):
     logging.info("Start Training score denoiser")
     # score diffusion training loop              
     for step in range(config.training.main_iters):
-        batch = torch.from_numpy(next(train_iter)).to(config.device).float().permute(0,2,1)
+        batch = next(train_iter).to(config.device).float().permute(0,2,1)
         sde_loss = sde_step(state,batch)
 
         if step % config.training.log_freq == 0:
