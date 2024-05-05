@@ -85,7 +85,6 @@ def get_sde_step_fn(sde,train,optimize_fn=None,reduce_mean=True,continuous=True,
         encoder = state['encoder']
         encoder_fn = mutils.get_model_fn(encoder,train=train)
         batch = encoder_fn(batch)
-        print(batch.shape)
         denoiser = state['denoiser']
         denoiser_optim = state['denoiser_optim']
 
