@@ -74,6 +74,6 @@ def get_dataset(dir,config):
     train_data = numpy_data['data']
     print(train_data.shape)
     dataloader = torch.utils.data.DataLoader(train_data,config.data.batch_size,shuffle=True)
-    seq_len , feat = train_data.shape
+    _size, feat , seq_len = train_data.shape
     assert seq_len == config.data.seq_len and config.data.num_features == feat
     return train_data

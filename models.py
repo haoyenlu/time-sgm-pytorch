@@ -6,7 +6,10 @@ import torch.nn.functional as F
 import utils as mutils
 
 class Encoder(nn.Module):
-    def __init__(self,config): # input_size : num_feature
+    def __init__(self,config):
+        '''
+        LSTM input shape: (N,L,H)
+        '''
         super(Encoder,self).__init__()
         self.hidden_dim = config.model.encoder_hidden_dim
         self.num_layer = config.model.encoder_num_layer
@@ -61,7 +64,10 @@ class ConvBlock(nn.Module):
 
 class Denoiser(nn.Module):
     def __init__(self,config):
-        super(Denoiser,self).__init__()
+        '''
+        Conv1d input shape: (N,C,L)
+        '''
+        super(Denoiser,self).__init__() 
         
         assert config.data.seq_len % 2 ** len(config.model.denoiser_hidden_dim) == 0
 
