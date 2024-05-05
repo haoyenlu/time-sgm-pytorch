@@ -53,33 +53,37 @@ def train(args,config):
 
     # get data
     dataloader = utils.get_dataset(args.dir,config)
-    train_iter = iter(dataloader)
 
-    batch = next(train_iter)
-    print(batch.shape)
 
-    logging.info("Start Training encoder-decoder")
+    def get_infinite_batch(dataloader):
+        while True:
+            for batch in dataloader:
+                yield batch
+    
+    train_iter = get_infinite_batch(dataloader)
+
+    print("Start Training encoder-decoder")
     # encoder-decoder training loop
     for step in range(config.training.ed_iters):
         batch = next(train_iter).to(config.device).float().permute(0,2,1)
         recon_loss = ed_step(state,batch)
 
         if step % config.training.log_freq == 0:
-            logging.info(f"Step: {step}, Loss: {recon_loss.item()}")
+            print(f"Step: {step}, Loss: {recon_loss.item()}")
             writer.add_scalar("Reconstruction Training Loss",recon_loss.item(),step)
         
         if step != 0 and step % config.training.checkpoint_freq == 0:
             checkpoint.save_checkpoint(os.path.join(args.ckptDir,f'checkpoint_{step}'),state)
 
 
-    logging.info("Start Training score denoiser")
+    print("Start Training score denoiser")
     # score diffusion training loop              
     for step in range(config.training.main_iters):
         batch = next(train_iter).to(config.device).float().permute(0,2,1)
         sde_loss = sde_step(state,batch)
 
         if step % config.training.log_freq == 0:
-            logging.info(f"Step: {step}, Loss: {sde_loss.item()}")
+            print(f"Step: {step}, Loss: {sde_loss.item()}")
             writer.add_scaler("Diffusion Training Loss",sde_loss.item(),step)
 
         if step != 0 and step % config.training.checkpoint_freq == 0:
