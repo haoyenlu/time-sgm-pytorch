@@ -55,6 +55,12 @@ def train(args,config):
     dataloader = utils.get_dataset(args.dir,config)
     train_iter = iter(dataloader)
 
+    # Test
+    try:
+        while True:
+            batch = next(train_iter)
+    except StopIteration as e:
+        print(e)
 
     logging.info("Start Training encoder-decoder")
     # encoder-decoder training loop
