@@ -34,7 +34,7 @@ def get_default_configs():
   # data
   config.data = data = ml_collections.ConfigDict()
   data.batch_size = 8
-  data.seq_len = 320
+  data.seq_len = 512
   data.num_features = 9
 
   # model
